@@ -1,0 +1,25 @@
+{
+  "name": "tabscanner-node",
+  "version": "0.0.1",
+  "description": "A node wrapper for tabscanner. Provide it with an image and it will then send the image to the Tabscanner endpoint and poll the server until the results are received. ",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tabscanner",
+    "receipt",
+    "api",
+    "extraction",
+    "finance",
+    "accounting"
+  ],
+  "author": "David Pettifer",
+  "license": "ISC",
+  "dependencies": {
+    "poll-request": "github:mrdizzy/poll-request"
+  }
+}
