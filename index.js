@@ -1,5 +1,5 @@
 var request_promise = require('request-promise-native')
-var PollRequest = require('./../poll-request/index.js');
+var PollRequest = require('poll-request');
 
 class TabScanner {
 
