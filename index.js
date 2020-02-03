@@ -16,13 +16,11 @@ class TabScanner {
     this.image = image;
     var getToken = this.createFirstRequest(image, test_mode);
     return getToken.then(result => {
-      console.log(result)
      return this.retrieveResults(result.token);
     })
   }
 
   retrieveResults(token) {
-    console.log(token)
     var poll_request = new PollRequest(4000);
     let options = {
       url: "https://api.tabscanner.com/api/result/" + token,
