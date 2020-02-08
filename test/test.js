@@ -3,6 +3,9 @@ let TabScanner = require('../index');
 let fixtures = require(__dirname + "/fixtures.js");
 let fs = require('fs');
 let image = fs.readFileSync(__dirname + "/asda.jpg");
+
+let validApiKey = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl"
+
 jest.mock('request-promise-native');
 
 test('Constructor must throw error if apiKey is not valid 64 character string', () => {
@@ -19,13 +22,24 @@ test('Constructor must throw error if apiKey is not valid 64 character string', 
 
 test('Constructor does not throw error if apiKey is valid 64 character string', () => {
     expect(() => {
-        new TabScanner("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl");
+        new TabScanner(validApiKey);
     }).not.toThrow();
+})
+
+test("Passes default constructor options to first API request", () => {
+   var tb =  new TabScanner(validApiKey, {
+            decimalPlaces: 0,
+            defaultDateParsing: "d/m",
+            testMode: true,
+        }
+    )
+    
+    let result = tb.parseReceipt(image);
+    console.log(request_promise.post.mock.calls[0][0].formData);
 })
 
 test('Get successful result', done => {
     request_promise.post.mockResolvedValueOnce(fixtures.get_token_success);
-
 
     let waitrose_filter = (result) => {
         let receipt = result.result;
@@ -55,17 +69,16 @@ test('Get successful result', done => {
 
             lines.push([date, establishment, address, "", line.lineTotal, line.lineTotal, "", line.descClean, "", paymentMethod])
         })
-        lines.push("","","","","","","","","",total)
+        lines.push("", "", "", "", "", "", "", "", "", total)
         return lines;
     }
 
     var filters = [waitrose_filter, final_filter]
 
-    var tb = new TabScanner("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl");
+    var tb = new TabScanner(validApiKey);
     tb.retrieveResults = jest.fn().mockResolvedValueOnce(fixtures.waitrose)
-    var result = tb.parseReceipt(image, true, filters);
+    var result = tb.parseReceipt(image, filters);
     result.then(r => {
-        console.log(r);
         done();
     })
 })
