@@ -15,7 +15,7 @@ describe("Testing API request builds", () => {
   beforeEach(() => {
     request.post.mockReturnValueOnce(fixtures.get_token_success);
 
-    request.mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.asda);
+    request.mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.asda);
   });
 
   test('Constructor must throw error if apiKey is not valid 64 character string', () => {
@@ -91,7 +91,7 @@ describe("testing successful results", () => {
   beforeEach(() => {
     request.post.mockReturnValueOnce(fixtures.get_token_success);
 
-    request.mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.asda);
+    request.mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.asda);
   });
 
   test('Get successful result', done => {
@@ -110,30 +110,108 @@ describe("testing successful results", () => {
       done();
     })
   })
+})
 
-  test('Test transform filters', done => {
+describe("test transform filters", () => {
+  beforeEach(() => {
+
+    request.mockReset();
+    request.post.mockReturnValueOnce(fixtures.get_token_success);
+    request.mockReturnValueOnce(fixtures.waitrose);
+  });
+
+  test('Test one filter', done => {
+
     let tb = new TabScanner({
       apiKey: validApiKey
     });
 
     let waitrose_filter = (receipt) => {
       if (receipt.establishment == "Waitrose") {
-        let lines = [];
-        let total = 0;
+        let transformed_receipt = {
+          lineItems: [],
+          establishment: receipt.establishment,
+          date: receipt.date,
+          subTotal: receipt.subTotal,
+          total: receipt.total,
+          currency: receipt.currency
+        };
         receipt.lineItems.forEach(line => {
           if (!line.desc.match(/15.0%/i)) {
             line.lineTotal = (85 / 100) * line.lineTotal;
-            lines.push(line);
+            transformed_receipt.lineItems.push(line);
           }
         })
-        receipt.lineItems = lines;
+        return transformed_receipt;
       }
-      console.log(receipt);
-      return receipt;
     }
 
-
-
+    tb.parseReceipt({
+      image: image,
+      transformer_functions: [waitrose_filter]
+    }).then(r => {
+      expect(r).toEqual({
+        lineItems: [{
+            qty: 0,
+            desc: 'SHAWARMA MUSH',
+            unit: '',
+            price: '0.000',
+            symbols: [],
+            discount: '0.000',
+            lineType: '',
+            descClean: 'SHAWARMA MUSH Reduced item',
+            lineTotal: 0.2125,
+            productCode: '',
+            customFields: {}
+          },
+          {
+            qty: 0,
+            desc: 'WR SHAWARMA MUSH WRA',
+            unit: '',
+            price: '0.000',
+            symbols: [],
+            discount: '0.000',
+            lineType: '',
+            descClean: 'WR SHAWARMA MUSH WRA Reduced item',
+            lineTotal: 0.2125,
+            productCode: '',
+            customFields: {}
+          },
+          {
+            qty: 0,
+            desc: 'TAIKO KATSU BENTO',
+            unit: '',
+            price: '0.000',
+            symbols: [],
+            discount: '0.000',
+            lineType: '',
+            descClean: 'TAIKO KATSU BENTO Reduced item',
+            lineTotal: 0.4165,
+            productCode: '',
+            customFields: {}
+          },
+          {
+            qty: 0,
+            desc: 'REALLY GRLCKY GARLIC',
+            unit: '',
+            price: '0.000',
+            symbols: [],
+            discount: '0.000',
+            lineType: '',
+            descClean: 'REALLY GRLCKY GARLIC Partner Discount',
+            lineTotal: 0.24649999999999997,
+            productCode: '',
+            customFields: {}
+          }
+        ],
+        establishment: 'Waitrose',
+        date: '2020-03-02 20:03:40',
+        subTotal: '1.080',
+        total: '1.080',
+        currency: 'GBP'
+      })
+      done();
+    })
 
   })
 
