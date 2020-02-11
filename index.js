@@ -23,15 +23,12 @@ class TabScanner {
    * Create an instance of the API
    * @param {string} apiKey - the API key provided by tabscanner.com to enable you to access the endpoint, this should be a string that is 64 characters long
    **/
-  constructor(apiKey, tabscanner_formdata_options) {
-    this.tabscanner_formdata_options = tabscanner_formdata_options;
+  constructor(options) {
+    let apiKey = options.apiKey;
     if (apiKey && apiKey.length === 64 && typeof apiKey == "string") {
-      this.request_options = {
-        json: true,
-        headers: {
-          apiKey: apiKey
-        }
-      }
+      this.apiKey = apiKey;
+      delete options.apiKey;
+      this.options = options;
     }
     else {
       throw new Error("The apikey must be a string of 64 characters");
@@ -46,40 +43,25 @@ class TabScanner {
    * @param {boolean} test_mode - if this is true, then the tabscanner.com api will run in test mode 
    **/
 
+  async parseReceipt(options) {
+    this.options = Object.assign({}, this.options, options)
 
-  // TODO: merge constructor default options with options parsed to this instance 
-  async parseReceipt(image, transformer_functions, tabscanner_formdata_options) {
-    this.tabscanner_formdata_options = Object.assign({}, this.tabscanner_formdata_options, tabscanner_formdata_options)
-    this.image = image;
-    let getToken = this.createFirstRequest(image);
-
-    let results = await getToken.then(result => {
-      return this.retrieveResults(result.token);
-    })
-
-    if (transformer_functions) {
-      transformer_functions.forEach(callback => {
-        results = callback(results);
-      })
-    }
-    return results;
+    this.token = await this.uploadAndGetToken(options.image);
+    let json_response = await this.retrieveResults();
+    json_response = json_response.result;
+    let final_results = this.transform(options.transformer_functions, json_response);
+    return final_results;
   }
 
-  createFirstRequest(image_buffer) {
-    let options = {
-      url: "https://api.tabscanner.com/api/process",
-      method: "POST",
-      formData: this.tabscanner_formdata_options
-    }
-    options.formData.file = {
+  uploadAndGetToken(image_buffer) {
+    let request = this.buildRequest({
       value: image_buffer,
       options: {
         filename: "aldi.png",
         contentType: "image/png"
       }
-    }
-    let request = Object.assign({}, options, this.request_options);
-    return request_promise.post(request)
+    })
+    return request_promise.post(request).token
   }
 
   /**
@@ -88,20 +70,49 @@ class TabScanner {
    * 
    * @param {string} - a string containing the token returned by the endpoint that identifies the receipt we are getting the results for
    **/
-  retrieveResults(token) {
+  retrieveResults() {
     var poll_request = new PollRequest(4000);
-    let options = {
-      url: "https://api.tabscanner.com/api/result/" + token,
-      method: "GET"
-    }
-    let request = Object.assign({}, options, this.request_options);
+    let request = this.buildRequest();
     return poll_request.request(request, {
-
       callback: r => {
         return r.success == true && r.status == "done";
       }
     });
   }
+
+  buildRequest(file) {
+    if (file) {
+      return {
+        url: "https://api.tabscanner.com/api/process",
+        method: "POST",
+        formData: this.options,
+        json: true,
+        headers: {
+          apiKey: this.apiKey
+        }
+      }
+    }
+    else {
+      return {
+        url: "https://api.tabscanner.com/api/result/" + this.token,
+        method: "GET",
+        headers: {
+          apiKey: this.apiKey
+        },
+        json: true
+      }
+    }
+  }
+
+  transform(transformer_functions, json_response) {
+    if (transformer_functions) {
+      transformer_functions.forEach(callback => {
+        json_response = callback(json_response);
+      })
+    }
+    return json_response;
+  }
+
 }
 
 module.exports = TabScanner;
