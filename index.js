@@ -43,22 +43,23 @@ class TabScanner {
    * @param {boolean} test_mode - if this is true, then the tabscanner.com api will run in test mode 
    **/
 
-  async parseReceipt(options) {
+  async parseReceipt(image, options) {
     this.options = Object.assign({}, this.options, options)
 
-    this.token = await this.uploadAndGetToken(options.image);
+    this.token = await this.uploadAndGetToken(image);
     let json_response = await this.retrieveResults();
     json_response = json_response.result;
-    let final_results = this.transform(options.transformer_functions, json_response);
-    return final_results;
+    if(options) {
+      json_response = this.transform(options.transformer_functions, json_response);
+    }
+    return json_response;
   }
 
   uploadAndGetToken(image_buffer) {
     let request = this.buildRequest({
       value: image_buffer,
       options: {
-        filename: "aldi.png",
-        contentType: "image/png"
+        contentType: "image/jpg"
       }
     })
     return request_promise.post(request).token
@@ -80,9 +81,9 @@ class TabScanner {
     });
   }
 
-  buildRequest(file) {
-    if (file) {
-      return {
+  buildRequest(file_for_formdata) {
+    if (file_for_formdata) {
+      let request = {
         url: "https://api.tabscanner.com/api/process",
         method: "POST",
         formData: this.options,
@@ -91,6 +92,10 @@ class TabScanner {
           apiKey: this.apiKey
         }
       }
+      
+      request.formData = this.options;
+      request.formData.file = file_for_formdata;
+      return request;
     }
     else {
       return {

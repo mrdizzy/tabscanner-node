@@ -50,9 +50,7 @@ describe("Testing API request builds", () => {
       cents: false
     })
     const build_request = jest.spyOn(tb, "buildRequest");
-    await tb.parseReceipt({
-      image: image
-    })
+    await tb.parseReceipt(image)
     let first_call = build_request.mock.results[0].value;
     expect(first_call.url).toEqual('https://api.tabscanner.com/api/process');
     expect(first_call.method).toEqual('POST');
@@ -75,9 +73,7 @@ describe("Testing API request builds", () => {
       cents: false
     })
     const build_request = jest.spyOn(tb, "buildRequest");
-    await tb.parseReceipt({
-      image: image
-    })
+    await tb.parseReceipt(image)
     let second_call = build_request.mock.results[1].value;
     expect(second_call.url).toEqual("https://api.tabscanner.com/api/result/naQM25k8KyJPmgxG");
     expect(second_call.headers.apiKey).toEqual(validApiKey);
@@ -110,6 +106,42 @@ describe("testing successful results", () => {
       done();
     })
   })
+})
+
+describe("test correct file parameters sent to request", () => {
+  
+  beforeEach(() => {
+    request.mockReset();
+    request.post.mockReturnValueOnce(fixtures.get_token_success);
+    request.mockReturnValueOnce(fixtures.waitrose);
+  });
+  
+  test("check request contains proper file object", async () => {
+    
+    let tb = new TabScanner({
+      apiKey: validApiKey
+    });
+    
+    const build_request = jest.spyOn(tb, "buildRequest");
+    await tb.parseReceipt(image)
+    
+    let first_call = build_request.mock.results[0].value;
+    
+    let formData = { 
+      file: {
+        value: image,
+        contentType: "image/jpg"
+      }
+    }
+    
+    expect(first_call.formData.file.value).toEqual(image);
+    console.log(first_call);
+    
+    
+    
+  })
+  
+  
 })
 
 describe("test transform filters", () => {
@@ -146,8 +178,8 @@ describe("test transform filters", () => {
       }
     }
 
-    tb.parseReceipt({
-      image: image,
+    tb.parseReceipt(
+      image, {
       transformer_functions: [waitrose_filter]
     }).then(r => {
       expect(r).toEqual({
