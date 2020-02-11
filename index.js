@@ -59,7 +59,8 @@ class TabScanner {
     let request = this.buildRequest({
       value: image_buffer,
       options: {
-        contentType: "image/jpg"
+        contentType: "image/jpg",
+        filename: "aldi.jpg"
       }
     })
     return request_promise.post(request).token
