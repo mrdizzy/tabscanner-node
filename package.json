@@ -20,10 +20,13 @@
   "author": "David Pettifer",
   "license": "ISC",
   "dependencies": {
+    "form-data": "^3.0.0",
     "poll-request": "github:mrdizzy/poll-request",
-    "request-promise-native": "^1.0.8"
+    "request-promise-native": "^1.0.8",
+    "underscore": "^1.9.2"
   },
   "devDependencies": {
+    "axios": "^0.19.2",
     "jest": "^25.1.0"
   }
 }

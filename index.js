@@ -1,5 +1,6 @@
-var request_promise = require('request-promise-native')
-var PollRequest = require('poll-request');
+const request_promise = require('request-promise-native')
+const PollRequest = require('poll-request');
+const _ = require('underscore');
 
 /* TABSCANNER arguments to https://api.tabscanner.com/api/2/process endpoint
 
@@ -26,7 +27,7 @@ class TabScanner {
     if (apiKey && apiKey.length === 64 && typeof apiKey == "string") {
       this.apiKey = apiKey;
       delete options.apiKey;
-      this.options = options;
+      this.default_tabscanner_formdata_options = options;
     }
     else {
       throw new Error("The apikey must be a string of 64 characters");
@@ -41,33 +42,31 @@ class TabScanner {
    * @param {boolean} test_mode - if this is true, then the tabscanner.com api will run in test mode 
    **/
 
-  async parseReceipt(image, options) {
-    if (options) {
-      this.filters = options.transformer_functions;
-      
-    delete options.transformer_functions;
-    }
-    this.options = Object.assign({}, this.options, options)
+  async parseReceipt(image, options ={}) {
+    let tabscanner_formdata_options = _.pick(options, "decimalPlaces", "cents","documentType", "defaultDateParsing", "testMode");
+    this.tabscanner_formdata_options = Object.assign({},tabscanner_formdata_options, this.default_tabscanner_formdata_options)
+    this.options = options;
+    
     let result = await this.uploadAndGetToken(image);
     this.token = result.token;
+    
     let json_response = await this.retrieveResults();
     json_response = json_response.result;
-    if (options) {
-      json_response = this.transform(json_response);
-    }
+    json_response = this.transform(json_response);
+
     return json_response;
   }
 
   //  file - REQUIRED	The image file. Can accept JPG, PNG and PDF file formats.
   uploadAndGetToken(image_buffer) {
-    let file = {
+    let file_for_formdata = {
       value: image_buffer,
       options: {
         contentType: "image/jpg",
         filename: "receipt.jpg"
       }
     }
-    let request = this.buildRequest(file)
+    let request = this.buildRequest(file_for_formdata)
 
     return request_promise.post(request)
   }
@@ -90,18 +89,15 @@ class TabScanner {
 
   buildRequest(file_for_formdata) {
     if (file_for_formdata) {
-      delete this.options.transformer_functions;
       let request = {
         url: "https://api.tabscanner.com/api/process",
         method: "POST",
-        formData: this.options,
+        formData: this.tabscanner_formdata_options,
         json: true,
         headers: {
           apiKey: this.apiKey
         }
       }
-
-      request.formData = this.options;
       request.formData.file = file_for_formdata;
       return request;
     }
@@ -118,8 +114,8 @@ class TabScanner {
   }
 
   transform(json_response) {
-    if (this.filters) {
-      this.filters.forEach(callback => {
+    if (this.options.transformer_functions) {
+      this.options.transformer_functions.forEach(callback => {
         json_response = callback(json_response);
       })
     }

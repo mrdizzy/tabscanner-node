@@ -41,17 +41,15 @@ test("successful response", done => {
     let filters = [waitrose_filter, final_filter]
     var tb = new TabScanner({
         apiKey: "yMSgxm3eyourn2vK9KmW68WrElLO9afDVY0D7is2yVeoTOnqvc6aONwZYvj4iujm",
-        decimalPlaces: 0,
-        defaultDateParsing: "d/m",
-        testMode: "true",
-        documentType: "receipt",
-        cents: "false"
+        decimalPlaces: 0
     })
 
-    tb.parseReceipt(image, {
+    tb.parseReceipt(image, {defaultDateParsing: "d/m",
+        testMode: "true",
+        documentType: "receipt",
+        cents: "false",
         transformer_functions: filters
     }).then(result => {
-        console.log(result);
         done();
     })
 })
