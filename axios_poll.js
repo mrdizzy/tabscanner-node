@@ -62,8 +62,12 @@ let multipart_axios = function(axios_options, formdata, files) {
         let value = formdata[key];
         if (Array.isArray(value)) {
             let [binary, filename, content_type] = value;
-            form.append(key, binary, {filename: filename, contentType: content_type})
-        } else{
+            form.append(key, binary, {
+                filename: filename,
+                contentType: content_type
+            })
+        }
+        else {
             form.append(key, value);
         }
     }
@@ -86,9 +90,15 @@ multipart_axios({
 }, {
     file: [image, "receipt.jpg", "image/jpg"],
     testMode: "true"
-}).then(r =>
-   console.log(r.data.token)
-)
+}).then(r => {
+    let token = r.data.token;
+    const axios_poll = new AxiosPoll();
+    axios_poll.poll({url: "/result/" + token}, (evaluate) => {
+        return evaluate.data.success == true;
+    }).then(r => {
+        console.log(r)
+    })
+})
 
 //const axios_poll = new AxiosPoll();
 //axios_poll.poll({
