@@ -13,9 +13,9 @@ jest.mock('request');
 describe("Testing API request builds", () => {
 
   beforeEach(() => {
-    request.post.mockReturnValueOnce(fixtures.get_token_success);
+    request.post.mockResolvedValueOnce(fixtures.get_token_success);
 
-    request.mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.asda);
+    request.mockResolvedValueOnce(fixtures.get_token_result_unavailable).mockResolvedValueOnce(fixtures.get_token_result_unavailable).mockResolvedValueOnce(fixtures.asda);
   });
 
   test('Constructor must throw error if apiKey is not valid 64 character string', () => {
@@ -85,9 +85,9 @@ describe("Testing API request builds", () => {
 
 describe("testing successful results", () => {
   beforeEach(() => {
-    request.post.mockReturnValueOnce(fixtures.get_token_success);
+    request.post.mockResolvedValueOnce(fixtures.get_token_success);
 
-    request.mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.get_token_result_unavailable).mockReturnValueOnce(fixtures.asda);
+    request.mockResolvedValueOnce(fixtures.get_token_result_unavailable).mockResolvedValueOnce(fixtures.get_token_result_unavailable).mockResolvedValueOnce(fixtures.asda);
   });
 
   test('Get successful result', done => {
@@ -109,39 +109,35 @@ describe("testing successful results", () => {
 })
 
 describe("test correct file parameters sent to request", () => {
-  
+
   beforeEach(() => {
     request.mockReset();
-    request.post.mockReturnValueOnce(fixtures.get_token_success);
-    request.mockReturnValueOnce(fixtures.waitrose);
+    request.post.mockResolvedValueOnce(fixtures.get_token_success);
+    request.mockResolvedValueOnce(fixtures.waitrose);
   });
-  
-  test("check request contains proper file object", async () => {
-    
+
+  test("check request contains proper file object", async() => {
+
     let tb = new TabScanner({
       apiKey: validApiKey
     });
-    
+
     const build_request = jest.spyOn(tb, "buildRequest");
-    await tb.parseReceipt(image)
-    
+    await tb.parseReceipt(image);
+
     let first_call = build_request.mock.results[0].value;
-    
-    let formData = { 
+
+    let formData = {
       file: {
         value: image,
         contentType: "image/jpg"
       }
     }
-    
+
     expect(first_call.formData.file.value).toEqual(image);
-    console.log(first_call);
-    
-    
-    
+
   })
-  
-  
+
 })
 
 describe("test transform filters", () => {
@@ -180,8 +176,8 @@ describe("test transform filters", () => {
 
     tb.parseReceipt(
       image, {
-      transformer_functions: [waitrose_filter]
-    }).then(r => {
+        transformer_functions: [waitrose_filter]
+      }).then(r => {
       expect(r).toEqual({
         lineItems: [{
             qty: 0,
