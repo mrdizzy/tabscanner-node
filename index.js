@@ -3,8 +3,6 @@ var PollRequest = require('poll-request');
 
 /* TABSCANNER arguments to https://api.tabscanner.com/api/2/process endpoint
 
-  file - REQUIRED	The image file. Can accept JPG, PNG and PDF file formats.
-
   decimalPlaces - optional - integer - Should be 0, 1 or 3. A hint for what to look for on the receipt. It can improve accuracy if you know the number of decimal places in advance. This is not related to number formatting.
 
   cents - optional - boolean - Convert numbers without decimal places to cents. Only works with receipts set to 3 decimal places. (e.g. 1.574 = 1.574, 245 = 0.245)
@@ -44,26 +42,31 @@ class TabScanner {
    **/
 
   async parseReceipt(image, options) {
+    this.filters = options.transformer_functions;
+    delete options.transformer_functions;
     this.options = Object.assign({}, this.options, options)
-
-    this.token = await this.uploadAndGetToken(image);
-    let json_response = await this.retrieveResults();
-    json_response = json_response.result;
-    if(options) {
-      json_response = this.transform(options.transformer_functions, json_response);
-    }
-    return json_response;
+    let result = await this.uploadAndGetToken(image);
+    this.token = result.token;
+     let json_response = await this.retrieveResults();
+     json_response = json_response.result;
+     if(options) {
+       json_response = this.transform(this.filters, json_response);
+     }
+     return json_response;
   }
 
+  //  file - REQUIRED	The image file. Can accept JPG, PNG and PDF file formats.
   uploadAndGetToken(image_buffer) {
-    let request = this.buildRequest({
+    let file = {
       value: image_buffer,
       options: {
         contentType: "image/jpg",
-        filename: "aldi.jpg"
+        filename: "receipt.jpg"
       }
-    })
-    return request_promise.post(request).token
+    }
+    let request = this.buildRequest(file)
+    
+    return request_promise.post(request)
   }
 
   /**
@@ -84,6 +87,7 @@ class TabScanner {
 
   buildRequest(file_for_formdata) {
     if (file_for_formdata) {
+      delete this.options.transformer_functions;
       let request = {
         url: "https://api.tabscanner.com/api/process",
         method: "POST",
@@ -93,7 +97,7 @@ class TabScanner {
           apiKey: this.apiKey
         }
       }
-      
+
       request.formData = this.options;
       request.formData.file = file_for_formdata;
       return request;
