@@ -42,17 +42,20 @@ class TabScanner {
    **/
 
   async parseReceipt(image, options) {
-    this.filters = options.transformer_functions;
+    if (options) {
+      this.filters = options.transformer_functions;
+      
     delete options.transformer_functions;
+    }
     this.options = Object.assign({}, this.options, options)
     let result = await this.uploadAndGetToken(image);
     this.token = result.token;
-     let json_response = await this.retrieveResults();
-     json_response = json_response.result;
-     if(options) {
-       json_response = this.transform(this.filters, json_response);
-     }
-     return json_response;
+    let json_response = await this.retrieveResults();
+    json_response = json_response.result;
+    if (options) {
+      json_response = this.transform(json_response);
+    }
+    return json_response;
   }
 
   //  file - REQUIRED	The image file. Can accept JPG, PNG and PDF file formats.
@@ -65,7 +68,7 @@ class TabScanner {
       }
     }
     let request = this.buildRequest(file)
-    
+
     return request_promise.post(request)
   }
 
@@ -114,9 +117,9 @@ class TabScanner {
     }
   }
 
-  transform(transformer_functions, json_response) {
-    if (transformer_functions) {
-      transformer_functions.forEach(callback => {
+  transform(json_response) {
+    if (this.filters) {
+      this.filters.forEach(callback => {
         json_response = callback(json_response);
       })
     }
